@@ -22,4 +22,10 @@
     <style name="Theme.DiscordClone.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="Theme.DiscordClone.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="NavigationTheme" parent="Theme.DiscordClone">
+        <item name="android:textSize">16sp</item>
+        <item name="android:layout_marginBottom">60dp</item>
+    </style>
+
 </resources>

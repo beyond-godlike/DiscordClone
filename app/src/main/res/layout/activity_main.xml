@@ -17,13 +17,15 @@
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:fitsSystemWindows="true"
+        android:background="@color/teal_700"
         app:menu="@menu/activity_main_drawer"
-        app:itemTextColor="#000">
+        app:itemTextColor="@color/white">
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvChooseHeroDrawer"
+            android:id="@+id/rvChooseUserDrawer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="60dp"
             tools:listitem="@layout/model_navigator"/>
 
     </com.google.android.material.navigation.NavigationView>
