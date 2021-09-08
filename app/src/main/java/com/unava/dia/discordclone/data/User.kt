@@ -1,3 +1,3 @@
 package com.unava.dia.discordclone.data
 
-data class User(val name: String?, val email: String?)
+data class User(val name: String?)

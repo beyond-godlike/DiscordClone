@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.Observer
@@ -16,6 +17,7 @@ import com.unava.dia.discordclone.data.User
 import com.unava.dia.discordclone.other.Constants.KEY_FIRST_TIME_TOGGLE
 import com.unava.dia.discordclone.other.addFragment
 import com.unava.dia.discordclone.other.replaceFragment
+import com.unava.dia.discordclone.ui.fragments.AudioCallFragment
 import com.unava.dia.discordclone.ui.fragments.ChatFragment
 import com.unava.dia.discordclone.ui.fragments.LoginFragment
 import com.unava.dia.discordclone.ui.fragments.RegisterFragment
@@ -36,10 +38,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private lateinit var viewModel: MainViewModel
 
+    lateinit var toggle: ActionBarDrawerToggle
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
         setContentView(R.layout.activity_main)
+
+        toggle = ActionBarDrawerToggle(this, drawer, R.string.open, R.string.close)
+        drawer.addDrawerListener(toggle)
+        toggle.syncState()
+
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         if (!isFirstTimeOpen) {
             val success = writePersonalDataToSharedPref()
@@ -74,16 +84,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 replaceFragment(R.id.fragmentContainer, LoginFragment())
             }
             R.id.miCall -> {
+                replaceFragment(R.id.fragmentContainer, AudioCallFragment())
             }
             R.id.miVideo -> {
             }
             R.id.miClose -> finish()
         }
-        return true
+
+        // for drawer
+        return toggle.onOptionsItemSelected(item)
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        //this.viewModel.changeCurrentHeroId(item.itemId)
         drawer.closeDrawer(GravityCompat.START)
         return true
     }
@@ -97,7 +109,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onLoginClicked() {
         replaceFragment(R.id.fragmentContainer, ChatFragment())
-        //navController.navigate(R.id.loginFragment)
     }
 
     private fun initAdapter(users: List<User>) {
@@ -107,7 +118,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             LinearLayoutManager(applicationContext, RecyclerView.VERTICAL, false)
 
         adapter.onItemClick = {
-            //this.viewModel.changeCurrentUserId(it)
+            this.viewModel.changeCurrentUserId(it)
         }
     }
 

@@ -14,4 +14,7 @@
     <string name="email_hint_text">email_hint_text</string>
     <string name="password_hint_text">password_hint_text</string>
     <string name="bt_register">Register</string>
+
+    <string name="open">Open</string>
+    <string name="close">Close</string>
 </resources>
