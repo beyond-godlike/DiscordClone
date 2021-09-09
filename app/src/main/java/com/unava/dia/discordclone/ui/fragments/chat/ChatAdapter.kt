@@ -1,14 +1,13 @@
-package com.unava.dia.discordclone.ui.adapters
+package com.unava.dia.discordclone.ui.fragments.chat
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.unava.dia.discordclone.R
-import java.util.Collections.addAll
+import com.unava.dia.discordclone.ui.adapters.MessageDiffUtil
 
 class ChatAdapter(private val messages: MutableList<String>) :
     RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {

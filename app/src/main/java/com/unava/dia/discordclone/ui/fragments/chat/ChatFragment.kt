@@ -1,50 +1,33 @@
-package com.unava.dia.discordclone.ui.fragments
+package com.unava.dia.discordclone.ui.fragments.chat
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.unava.dia.discordclone.R
-import com.unava.dia.discordclone.ui.adapters.ChatAdapter
-import com.unava.dia.discordclone.ui.main.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.fragment_chat.*
-import javax.inject.Inject
 
 @AndroidEntryPoint
-class ChatFragment : Fragment() {
+class ChatFragment : Fragment(R.layout.fragment_chat) {
 
-    private lateinit var viewModel: MainViewModel
+    private val viewModel: ChatViewModel by viewModels()
 
     private var chatAdapter: ChatAdapter? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
-        return inflater.inflate(R.layout.fragment_chat, container, false)
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         setupRecyclerView()
         observeViewModel()
 
-        chat_btn_send_message.setOnClickListener {
-            val msg = tvMessage.text.toString().trim()
+        btSend.setOnClickListener {
+            val msg = etMessage.text.toString().trim()
             viewModel.postMessage(msg)
-            tvMessage.text.clear()
+            etMessage.text?.clear()
         }
         viewModel.fetchMessages()
     }
@@ -52,6 +35,7 @@ class ChatFragment : Fragment() {
     private fun observeViewModel() {
         viewModel.messages.observe(requireActivity(), {
             updateMessages(it)
+            rvChat.smoothScrollToPosition(it.size)
         })
     }
 

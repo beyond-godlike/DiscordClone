@@ -18,7 +18,7 @@ import com.unava.dia.discordclone.other.Constants.KEY_FIRST_TIME_TOGGLE
 import com.unava.dia.discordclone.other.addFragment
 import com.unava.dia.discordclone.other.replaceFragment
 import com.unava.dia.discordclone.ui.fragments.AudioCallFragment
-import com.unava.dia.discordclone.ui.fragments.ChatFragment
+import com.unava.dia.discordclone.ui.fragments.chat.ChatFragment
 import com.unava.dia.discordclone.ui.fragments.LoginFragment
 import com.unava.dia.discordclone.ui.fragments.RegisterFragment
 import dagger.hilt.android.AndroidEntryPoint
@@ -67,10 +67,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         this.viewModel.users.observe(this, Observer {
             initAdapter(it)
         })
-
-        this.viewModel.userId.observe(this, Observer {
-            this.viewModel.loadChat(it)
-       })
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
