@@ -9,16 +9,18 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatViewModel @Inject constructor(private val firebaseRef: FirebaseDatabase) : ViewModel() {
 
-    val messages: MutableLiveData<List<String>> = MutableLiveData()
+    val messages: MutableLiveData<ArrayList<String>> = MutableLiveData()
 
     var dbMessages = firebaseRef.reference.child("messages")
 
     fun postMessage(msg: String) {
-        dbMessages.push().setValue(msg)
+        var key = System.currentTimeMillis().toString()
+        dbMessages.child(key).setValue(msg)
+        //dbMessages.push().setValue(msg)
     }
 
     fun fetchMessages() {
-        dbMessages.addValueEventListener(
+        dbMessages.orderByValue().addValueEventListener(
             object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     collectMessges(dataSnapshot.value as Map<Any?, String?>?)

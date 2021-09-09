@@ -39,14 +39,14 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
         })
     }
 
-    private fun updateMessages(list: List<String>) {
+    private fun updateMessages(list: ArrayList<String>) {
         if (list.isNotEmpty()) {
             if (chatAdapter == null) {
                 chatAdapter =
                     ChatAdapter(list.toMutableList())
                 rvChat.adapter = chatAdapter
-                chatAdapter?.addMessages(list.toMutableList())
             }
+            chatAdapter?.addMessages(list.toMutableList())
         }
     }
 
