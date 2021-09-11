@@ -20,6 +20,7 @@ class ChatViewModel @Inject constructor(private val firebaseRef: FirebaseDatabas
     }
 
     fun fetchMessages() {
+        if(dbMessages.key == null) return
         dbMessages.orderByValue().addValueEventListener(
             object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {

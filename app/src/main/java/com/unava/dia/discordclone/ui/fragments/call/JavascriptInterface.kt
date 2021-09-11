@@ -1,6 +1,4 @@
-package com.unava.dia.discordclone.other
-
-import com.unava.dia.discordclone.ui.fragments.AudioCallFragment
+package com.unava.dia.discordclone.ui.fragments.call
 
 class JavascriptInterface(val callFragment: AudioCallFragment) {
 

@@ -1,11 +1,14 @@
 package com.unava.dia.discordclone.ui.main
 
+import android.Manifest
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -17,7 +20,7 @@ import com.unava.dia.discordclone.data.User
 import com.unava.dia.discordclone.other.Constants.KEY_FIRST_TIME_TOGGLE
 import com.unava.dia.discordclone.other.addFragment
 import com.unava.dia.discordclone.other.replaceFragment
-import com.unava.dia.discordclone.ui.fragments.AudioCallFragment
+import com.unava.dia.discordclone.ui.fragments.call.AudioCallFragment
 import com.unava.dia.discordclone.ui.fragments.chat.ChatFragment
 import com.unava.dia.discordclone.ui.fragments.LoginFragment
 import com.unava.dia.discordclone.ui.fragments.RegisterFragment
@@ -40,10 +43,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     lateinit var toggle: ActionBarDrawerToggle
 
+    private val permissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+    private val requestcode = 1
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
         setContentView(R.layout.activity_main)
+
+        if (!isPermissionGranted()) {
+            askPermissions()
+        }
 
         toggle = ActionBarDrawerToggle(this, drawer, R.string.open, R.string.close)
         drawer.addDrawerListener(toggle)
@@ -116,6 +127,20 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         adapter.onItemClick = {
             this.viewModel.changeCurrentUserId(it)
         }
+    }
+
+    private fun askPermissions() {
+        ActivityCompat.requestPermissions(this, permissions, requestcode)
+    }
+
+    private fun isPermissionGranted(): Boolean {
+
+        permissions.forEach {
+            if (ActivityCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED)
+                return false
+        }
+
+        return true
     }
 
     override fun onBackPressed() {
