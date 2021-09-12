@@ -93,6 +93,10 @@ dependencies {
 
     implementation 'android.arch.lifecycle:extensions:1.1.1'
 
+    // agora
+    implementation 'io.agora.rtc:full-sdk:3.0.0.2'
+    implementation 'io.agora.rtm:rtm-sdk:1.2.2'
+
 
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'

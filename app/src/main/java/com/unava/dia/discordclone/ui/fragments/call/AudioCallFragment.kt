@@ -1,21 +1,26 @@
 package com.unava.dia.discordclone.ui.fragments.call
 
-import android.annotation.SuppressLint
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.webkit.PermissionRequest
-import android.webkit.WebChromeClient
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.widget.Toast
+import android.widget.FrameLayout
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import com.google.firebase.database.*
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 import com.unava.dia.discordclone.R
 import dagger.hilt.android.AndroidEntryPoint
+import io.agora.rtc.IRtcEngineEventHandler
+import io.agora.rtc.RtcEngine
+import io.agora.rtc.video.VideoCanvas
 import kotlinx.android.synthetic.main.fragment_audio_call.*
-import java.util.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -24,15 +29,22 @@ class AudioCallFragment : Fragment() {
     var username = "enokentiy"
     var friendsUsername = "Diana"
 
-    var isPeerConnected = false
+
+    private val PERMISSION_REQ_ID_RECORD_AUDIO = 22
+    private val PERMISSION_REQ_ID_CAMERA = PERMISSION_REQ_ID_RECORD_AUDIO + 1
 
     @Inject
     lateinit var firebaseDb: FirebaseDatabase
 
     var firebaseRef: DatabaseReference? = null
 
-    var isAudio = true
-    var isVideo = true
+    private val APP_ID = "7e80f20eb83a45aab8354ac12cc"
+    private val CHANNEL = "discordCloneChannel"
+    private val TOKEN =
+        "0067e80f20eb83a45aab8354ac12cc81829IADrCgR+uYbWJmYfj7TDAfUl+avwx6qs8dWWLwhm6lGs857BI3IAAAAAEAAQK9Jva0Y/YQEAAQBrRj9h"
+    private var mRtcEngine: RtcEngine? = null
+
+    private var mRtcEventHandler: IRtcEngineEventHandler? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -44,168 +56,77 @@ class AudioCallFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        firebaseRef = firebaseDb.reference.child("")
-        username = "enokentiy"
+        initRtcEventHandler()
 
-        callBtn.setOnClickListener {
-            //friendsUsername = friendNameEdit.text.toString()
-            sendCallRequest()
+        if (checkSelfPermission(
+                Manifest.permission.RECORD_AUDIO,
+                PERMISSION_REQ_ID_RECORD_AUDIO
+            ) && checkSelfPermission(Manifest.permission.CAMERA, PERMISSION_REQ_ID_CAMERA)
+        ) {
+            initializeAndJoinChannel()
         }
-
-
-        toggleAudioBtn.setOnClickListener {
-            isAudio = !isAudio
-            callJavascriptFunction("javascript:toggleAudio(\"${isAudio}\")")
-            toggleAudioBtn.setImageResource(if (isAudio) R.drawable.ic_action_call else R.drawable.ic_action_add)
-        }
-
-        toggleVideoBtn.setOnClickListener {
-            isVideo = !isVideo
-            callJavascriptFunction("javascript:toggleVideo(\"${isVideo}\")")
-            toggleVideoBtn.setImageResource(if (isVideo) R.drawable.ic_action_video else R.drawable.ic_action_video)
-        }
-
-        setupWebView()
-
     }
 
-
-    private fun sendCallRequest() {
-        if (!isPeerConnected) {
-            Toast.makeText(
-                requireContext(),
-                "You're not connected. Check your internet",
-                Toast.LENGTH_LONG
-            ).show()
-            return
-        }
-
-        firebaseRef!!.child(friendsUsername).child("incoming").setValue(username)
-        firebaseRef!!.child(friendsUsername).child("isAvailable")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onCancelled(error: DatabaseError) {}
-
-                override fun onDataChange(snapshot: DataSnapshot) {
-
-                    if (snapshot.value.toString() == "true") {
-                        listenForConnId()
-                    }
-
+    private fun initRtcEventHandler() {
+        mRtcEventHandler = object : IRtcEngineEventHandler() {
+            // Listen for the remote user joining the channel to get the uid of the user.
+            override fun onUserJoined(uid: Int, elapsed: Int) {
+                GlobalScope.launch(Dispatchers.Main) {
+                    // Call setupRemoteVideo to set the remote video view after getting uid from the onUserJoined callback.
+                    setupRemoteVideo(uid)
                 }
+            }
 
-            })
-
-    }
-
-    private fun listenForConnId() {
-        firebaseRef!!.child(friendsUsername).child("connId")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onCancelled(error: DatabaseError) {}
-
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.value == null)
-                        return
-                    switchToControls()
-                    callJavascriptFunction("javascript:startCall(\"${snapshot.value}\")")
-                }
-
-            })
-    }
-
-    private fun loadVideoCall() {
-        val filePath = "file:android_asset/call.html"
-        webView.loadUrl(filePath)
-
-        webView.webViewClient = object : WebViewClient() {
-            override fun onPageFinished(view: WebView?, url: String?) {
-                initializePeer()
+            override fun onUserOffline(uid: Int, reason: Int) {
+                //runOnUiThread { onRemoteUserLeft() }
             }
         }
     }
 
-    var uniqueId = ""
-    private fun initializePeer() {
-
-        uniqueId = getUniqueID()
-
-        callJavascriptFunction("javascript:init(\"${uniqueId}\")")
-        firebaseRef!!.child(username).child("incoming")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onCancelled(error: DatabaseError) {}
-
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    onCallRequest(snapshot.value as? String)
-                }
-
-            })
-
-    }
-
-    private fun setupWebView() {
-
-        webView.webChromeClient = object : WebChromeClient() {
-            @SuppressLint("NewApi")
-            override fun onPermissionRequest(request: PermissionRequest?) {
-                //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                request?.grant(request.resources)
-                //}
-            }
+    private fun checkSelfPermission(permission: String, requestCode: Int): Boolean {
+        if (ContextCompat.checkSelfPermission(requireContext(), permission) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                requireActivity(),
+                arrayOf(permission),
+                requestCode
+            )
+            return false
         }
-
-        webView.settings.javaScriptEnabled = true
-        webView.settings.mediaPlaybackRequiresUserGesture = false
-        webView.addJavascriptInterface(JavascriptInterface(this), "Android")
-
-        loadVideoCall()
+        return true
     }
 
-    private fun onCallRequest(caller: String?) {
-        if (caller == null) return
+    private fun initializeAndJoinChannel() {
+        try {
+            mRtcEngine = RtcEngine.create(requireContext(), APP_ID, mRtcEventHandler)
+        } catch (e: Exception) {
 
-        callLayout.visibility = View.VISIBLE
-        incomingCallTxt.text = "$caller is calling..."
-
-        acceptBtn.setOnClickListener {
-            firebaseRef!!.child(username).child("connId").setValue(uniqueId)
-            firebaseRef!!.child(username).child("isAvailable").setValue(true)
-
-            callLayout.visibility = View.GONE
-            switchToControls()
         }
+        mRtcEngine!!.enableVideo()
 
-        rejectBtn.setOnClickListener {
-            firebaseRef!!.child(username).child("incoming").setValue(null)
-            callLayout.visibility = View.GONE
-        }
+        val localContainer = local_video_view_container as FrameLayout
 
+        val localFrame = RtcEngine.CreateRendererView(requireContext())
+        localContainer.addView(localFrame)
+        mRtcEngine!!.setupLocalVideo(VideoCanvas(localFrame, VideoCanvas.RENDER_MODE_FIT, 0))
+
+        mRtcEngine!!.joinChannel(TOKEN, CHANNEL, "", 0)
     }
 
+    private fun setupRemoteVideo(uid: Int) {
+        val remoteContainer = remote_video_view_container as FrameLayout
 
-    private fun switchToControls() {
-        inputLayout.visibility = View.GONE
-        callControlLayout.visibility = View.VISIBLE
-    }
-
-
-    private fun getUniqueID(): String {
-        return UUID.randomUUID().toString()
-    }
-
-    private fun callJavascriptFunction(functionString: String) {
-        webView.post { webView.evaluateJavascript(functionString, null) }
-    }
-
-
-    fun onPeerConnected() {
-        Toast.makeText(requireContext(), "connecting", Toast.LENGTH_LONG).show()
-        isPeerConnected = true
+        val remoteFrame = RtcEngine.CreateRendererView(requireContext())
+        remoteFrame.setZOrderMediaOverlay(true)
+        remoteContainer.addView(remoteFrame)
+        mRtcEngine!!.setupRemoteVideo(VideoCanvas(remoteFrame, VideoCanvas.RENDER_MODE_FIT, uid))
     }
 
     override fun onDestroy() {
-        //firebaseRef!!.child(username).setValue(null)
-        webView.loadUrl("about:blank")
         super.onDestroy()
+
+        mRtcEngine?.leaveChannel()
+        RtcEngine.destroy()
     }
-
-
 }
