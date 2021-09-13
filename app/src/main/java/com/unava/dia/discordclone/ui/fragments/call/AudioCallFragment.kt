@@ -4,24 +4,30 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.unava.dia.discordclone.R
+import com.unava.dia.discordclone.other.Constants.APP_ID
+import com.unava.dia.discordclone.other.Constants.CHANNEL
+import com.unava.dia.discordclone.other.Constants.PERMISSION_REQ_ID_CAMERA
+import com.unava.dia.discordclone.other.Constants.PERMISSION_REQ_ID_RECORD_AUDIO
+import com.unava.dia.discordclone.other.Constants.TOKEN
 import dagger.hilt.android.AndroidEntryPoint
 import io.agora.rtc.IRtcEngineEventHandler
 import io.agora.rtc.RtcEngine
 import io.agora.rtc.video.VideoCanvas
 import kotlinx.android.synthetic.main.fragment_audio_call.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import javax.inject.Inject
+import javax.inject.Named
 
 @AndroidEntryPoint
 class AudioCallFragment : Fragment() {
@@ -29,22 +35,42 @@ class AudioCallFragment : Fragment() {
     var username = "enokentiy"
     var friendsUsername = "Diana"
 
-
-    private val PERMISSION_REQ_ID_RECORD_AUDIO = 22
-    private val PERMISSION_REQ_ID_CAMERA = PERMISSION_REQ_ID_RECORD_AUDIO + 1
-
     @Inject
     lateinit var firebaseDb: FirebaseDatabase
 
+    @Inject
+    @Named("main")
+    lateinit var dispatcher:CoroutineDispatcher
+
     var firebaseRef: DatabaseReference? = null
 
-    private val APP_ID = "7e80f20eb83a45aab8354ac12cc"
-    private val CHANNEL = "discordCloneChannel"
-    private val TOKEN =
-        "0067e80f20eb83a45aab8354ac12cc81829IADrCgR+uYbWJmYfj7TDAfUl+avwx6qs8dWWLwhm6lGs857BI3IAAAAAEAAQK9Jva0Y/YQEAAQBrRj9h"
     private var mRtcEngine: RtcEngine? = null
 
-    private var mRtcEventHandler: IRtcEngineEventHandler? = null
+    private var mRtcEventHandler: IRtcEngineEventHandler = object : IRtcEngineEventHandler() {
+        override fun onUserJoined(uid: Int, elapsed: Int) {
+            GlobalScope.launch(dispatcher) {
+                setupRemoteVideo(uid)
+            }
+        }
+
+        override fun onUserOffline(uid: Int, reason: Int) {
+            GlobalScope.launch(dispatcher) {
+                onRemoteUserLeft()
+            }
+        }
+        override fun onUserMuteVideo(uid: Int, muted: Boolean) {
+            GlobalScope.launch(dispatcher) { onRemoteUserVideoMuted(uid, muted) }
+        }
+    }
+
+    private fun onRemoteUserVideoMuted(uid: Int, muted: Boolean) {
+        frameRemote.getChildAt(0) as SurfaceView
+
+        val tag = frameRemote.tag
+        if (tag != null && tag as Int == uid) {
+            frameRemote.visibility = if (muted) View.GONE else View.VISIBLE
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -56,7 +82,7 @@ class AudioCallFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        initRtcEventHandler()
+        setupUi()
 
         if (checkSelfPermission(
                 Manifest.permission.RECORD_AUDIO,
@@ -67,21 +93,25 @@ class AudioCallFragment : Fragment() {
         }
     }
 
-    private fun initRtcEventHandler() {
-        mRtcEventHandler = object : IRtcEngineEventHandler() {
-            // Listen for the remote user joining the channel to get the uid of the user.
-            override fun onUserJoined(uid: Int, elapsed: Int) {
-                GlobalScope.launch(Dispatchers.Main) {
-                    // Call setupRemoteVideo to set the remote video view after getting uid from the onUserJoined callback.
-                    setupRemoteVideo(uid)
-                }
-            }
+    private fun setupUi() {
+        ivOnSwitchCameraClicked.setOnClickListener {
+            mRtcEngine!!.switchCamera()
+        }
+        ivMute.setOnClickListener { iv->
+        }
+        ivOnLocalVideoMute.setOnClickListener { v ->
 
-            override fun onUserOffline(uid: Int, reason: Int) {
-                //runOnUiThread { onRemoteUserLeft() }
-            }
+        }
+        ivEndCall.setOnClickListener {
+            activity?.onBackPressed()
         }
     }
+
+
+    private fun onRemoteUserLeft() {
+        frameRemote.removeAllViews()
+    }
+
 
     private fun checkSelfPermission(permission: String, requestCode: Int): Boolean {
         if (ContextCompat.checkSelfPermission(requireContext(), permission) !=
@@ -101,26 +131,27 @@ class AudioCallFragment : Fragment() {
         try {
             mRtcEngine = RtcEngine.create(requireContext(), APP_ID, mRtcEventHandler)
         } catch (e: Exception) {
-
+            Toast.makeText(requireContext(), e.message, Toast.LENGTH_LONG).show()
         }
-        mRtcEngine!!.enableVideo()
+        mRtcEngine = RtcEngine.create(requireContext(), APP_ID, mRtcEventHandler)
+        mRtcEngine?.enableVideo()
 
-        val localContainer = local_video_view_container as FrameLayout
+        val localContainer = frameRemote as FrameLayout
 
         val localFrame = RtcEngine.CreateRendererView(requireContext())
         localContainer.addView(localFrame)
-        mRtcEngine!!.setupLocalVideo(VideoCanvas(localFrame, VideoCanvas.RENDER_MODE_FIT, 0))
+        mRtcEngine?.setupLocalVideo(VideoCanvas(localFrame, VideoCanvas.RENDER_MODE_FIT, 0))
 
-        mRtcEngine!!.joinChannel(TOKEN, CHANNEL, "", 0)
+        mRtcEngine?.joinChannel(TOKEN, CHANNEL, "", 0)
     }
 
     private fun setupRemoteVideo(uid: Int) {
-        val remoteContainer = remote_video_view_container as FrameLayout
+        val remoteContainer = frameLocal as FrameLayout
 
         val remoteFrame = RtcEngine.CreateRendererView(requireContext())
         remoteFrame.setZOrderMediaOverlay(true)
         remoteContainer.addView(remoteFrame)
-        mRtcEngine!!.setupRemoteVideo(VideoCanvas(remoteFrame, VideoCanvas.RENDER_MODE_FIT, uid))
+        mRtcEngine?.setupRemoteVideo(VideoCanvas(remoteFrame, VideoCanvas.RENDER_MODE_FIT, uid))
     }
 
     override fun onDestroy() {

@@ -17,4 +17,19 @@
 
     <string name="open">Open</string>
     <string name="close">Close</string>
+
+    <string name="login_button">Login</string>
+    <string name="logout_button">Logout</string>
+    <string name="join_button">Join</string>
+    <string name="leave_button">Leave</string>
+    <string name="send_peer_msg_button">Peer MSG</string>
+    <string name="send_channel_msg_button">Group MSG</string>
+    <string name="uid">Enter your uid</string>
+    <string name="msg">Enter your message</string>
+    <string name="channel_name">Channel name</string>
+    <string name="peer_name">Peer name</string>
+
+    <string name="app_id">7e80f20eb83a45aab8354ac12cc81829</string>
+    <string name="token">0067e80f20eb83a45aab8354ac12cc81829IADg1hTDPcZtXPjCWsKw7nEskA2Tg1xzkat7E0UATmGeP57BI3IAAAAAEADC2ctr2ExAYQEAAQDYTEBh
+</string>
 </resources>

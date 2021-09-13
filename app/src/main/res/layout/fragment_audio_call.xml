@@ -6,22 +6,63 @@
     tools:context=".ui.fragments.call.AudioCallFragment">
 
     <FrameLayout
-        android:id="@+id/local_video_view_container"
+        android:id="@+id/frameLocal"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/white" />
 
     <FrameLayout
-        android:id="@+id/remote_video_view_container"
+        android:id="@+id/frameRemote"
         android:layout_width="160dp"
         android:layout_height="160dp"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
-        android:layout_marginEnd="16dp"
-        android:layout_marginRight="16dp"
+        android:layout_alignParentEnd="true"
         android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
         android:background="@android:color/darker_gray" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_alignParentBottom="true"
+            android:visibility="visible"
+            android:layout_marginBottom="@dimen/activity_vertical_margin"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/ivOnLocalVideoMute"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="20"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_voice" />
+
+            <ImageView
+                android:id="@+id/ivMute"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="20"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_mute" />
+
+            <ImageView
+                android:id="@+id/ivOnSwitchCameraClicked"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="20"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_camera" />
+
+            <ImageView
+                android:id="@+id/ivEndCall"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="20"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_end_call" />
+
+        </LinearLayout>
+
 
 
 </RelativeLayout>
