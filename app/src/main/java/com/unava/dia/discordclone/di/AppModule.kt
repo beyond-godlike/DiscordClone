@@ -3,6 +3,7 @@ package com.unava.dia.discordclone.di
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
+import com.google.firebase.database.FirebaseDatabase
 import com.unava.dia.discordclone.other.Constants.KEY_FIRST_TIME_TOGGLE
 import com.unava.dia.discordclone.other.Constants.SHARED_PREFERENCES_NAME
 import dagger.Module
@@ -23,4 +24,6 @@ object AppModule {
         sharedPreferences.getBoolean(
             KEY_FIRST_TIME_TOGGLE, true
         )
+    @Provides
+    fun provideFirebaseDatabase() = FirebaseDatabase.getInstance("https://discordclone-dd303-default-rtdb.europe-west1.firebasedatabase.app/")
 }

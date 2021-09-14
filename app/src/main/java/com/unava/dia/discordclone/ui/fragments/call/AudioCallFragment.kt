@@ -12,11 +12,11 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
 import com.unava.dia.discordclone.R
+import com.unava.dia.discordclone.data.User
+import com.unava.dia.discordclone.other.Constants
 import com.unava.dia.discordclone.other.Constants.APP_ID
-import com.unava.dia.discordclone.other.Constants.CHANNEL
 import com.unava.dia.discordclone.other.Constants.PERMISSION_REQ_ID_CAMERA
 import com.unava.dia.discordclone.other.Constants.PERMISSION_REQ_ID_RECORD_AUDIO
 import com.unava.dia.discordclone.other.Constants.TOKEN
@@ -32,8 +32,12 @@ import javax.inject.Named
 @AndroidEntryPoint
 class AudioCallFragment : Fragment() {
 
-    var username = "enokentiy"
-    var friendsUsername = "Diana"
+    var username = "Andrew"
+    var channelName = "enokentiy"
+
+    private var DBFriend: List<String> = ArrayList()
+
+    private var localState: String = Constants.USER_STATE_OPEN
 
     @Inject
     lateinit var firebaseDb: FirebaseDatabase
@@ -47,6 +51,15 @@ class AudioCallFragment : Fragment() {
     private var mRtcEngine: RtcEngine? = null
 
     private var mRtcEventHandler: IRtcEngineEventHandler = object : IRtcEngineEventHandler() {
+        override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
+            GlobalScope.launch(dispatcher) {
+                Toast.makeText(requireContext(), "joined", Toast.LENGTH_LONG).show()
+                firebaseDb
+                    .getReference("users")
+                    .child(username)
+                    .setValue(User(username, uid, localState, DBFriend))
+            }
+        }
         override fun onUserJoined(uid: Int, elapsed: Int) {
             GlobalScope.launch(dispatcher) {
                 setupRemoteVideo(uid)
@@ -83,6 +96,8 @@ class AudioCallFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupUi()
+        getExtras()
+        connectToFirebase(username)
 
         if (checkSelfPermission(
                 Manifest.permission.RECORD_AUDIO,
@@ -91,6 +106,27 @@ class AudioCallFragment : Fragment() {
         ) {
             initializeAndJoinChannel()
         }
+    }
+
+    private fun getExtras() {
+        //channelName = username
+    }
+
+    private fun connectToFirebase(username: String) {
+        val dbUsers = firebaseDb.getReference("users")
+
+        dbUsers.push()
+        dbUsers.child(username).child("friend").addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                //DBFriend = snapshot.value as List<String>
+
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+
+            }
+
+        })
     }
 
     private fun setupUi() {
@@ -142,7 +178,7 @@ class AudioCallFragment : Fragment() {
         localContainer.addView(localFrame)
         mRtcEngine?.setupLocalVideo(VideoCanvas(localFrame, VideoCanvas.RENDER_MODE_FIT, 0))
 
-        mRtcEngine?.joinChannel(TOKEN, CHANNEL, "", 0)
+        mRtcEngine?.joinChannel(TOKEN, channelName, "", 0)
     }
 
     private fun setupRemoteVideo(uid: Int) {

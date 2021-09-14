@@ -21,7 +21,19 @@ class MainViewModel @Inject constructor(private val firebaseRef: FirebaseDatabas
         dbUsers.addListenerForSingleValueEvent(
             object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
-                    collectUsernames(dataSnapshot.value as Map<String?, Any?>?)
+                    val us = ArrayList<User>()
+                    //collectUsernames(dataSnapshot.value as Map<String?, Any?>?)
+                    if (dataSnapshot.exists()) {
+                        for (userSnapshot in dataSnapshot.children) {
+                            val name = userSnapshot.child("name").value as String?
+                            val roomState = userSnapshot.child("roomState").value as String?
+                            val uid = userSnapshot.child("uid").value as Long?
+                            val u = User(name, uid?.toInt(), roomState, ArrayList<String>())
+                            us.add(u)
+                        }
+                    }
+
+                    users.postValue(us)
                 }
 
                 override fun onCancelled(databaseError: DatabaseError) {}
@@ -31,9 +43,9 @@ class MainViewModel @Inject constructor(private val firebaseRef: FirebaseDatabas
     private fun collectUsernames(u: Map<String?, Any?>?) {
         val us = ArrayList<User>()
         for ((key, value) in u?.entries!!) {
-            us.add(User(key as String))
+            //us.add(User(value))
         }
-        users.postValue(us)
+        //users.postValue(us)
     }
 
     fun loadChat(id: Int) {
