@@ -11,6 +11,7 @@ import com.google.firebase.database.ValueEventListener
 import com.unava.dia.discordclone.data.User
 import com.unava.dia.discordclone.other.Constants
 import com.unava.dia.discordclone.other.Constants.APP_ID
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.agora.rtc.IRtcEngineEventHandler
 import io.agora.rtc.RtcEngine
 import kotlinx.coroutines.CoroutineDispatcher
@@ -19,10 +20,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Named
 
-class CallViewModel@Inject constructor(private val firebaseDb: FirebaseDatabase,
-                                       @Named("main")
-                                       private val dispatcher: CoroutineDispatcher
-) : ViewModel()  {
+@HiltViewModel
+class CallViewModel @Inject constructor(
+    private val firebaseDb: FirebaseDatabase,
+    @Named("main")
+    private val dispatcher: CoroutineDispatcher
+) : ViewModel() {
     var username = "Andrew"
     var channelName = "enokentiy"
 
@@ -48,6 +51,7 @@ class CallViewModel@Inject constructor(private val firebaseDb: FirebaseDatabase,
                     .setValue(User(username, uid, localState, DBFriend))
             }
         }
+
         override fun onUserJoined(uid: Int, elapsed: Int) {
             GlobalScope.launch(dispatcher) {
                 remoteVideo.postValue(uid)
@@ -59,6 +63,7 @@ class CallViewModel@Inject constructor(private val firebaseDb: FirebaseDatabase,
                 remoteUserLeft.postValue(true)
             }
         }
+
         override fun onUserMuteVideo(uid: Int, muted: Boolean) {
             GlobalScope.launch(dispatcher) {
                 remoteVideoMuted.postValue(RemoteMuted(uid, muted))
@@ -82,6 +87,7 @@ class CallViewModel@Inject constructor(private val firebaseDb: FirebaseDatabase,
 
         })
     }
+
     fun initializeAndJoinChannel(context: Context) {
         try {
             mRtcEngine = RtcEngine.create(context, APP_ID, mRtcEventHandler)
@@ -96,4 +102,4 @@ class CallViewModel@Inject constructor(private val firebaseDb: FirebaseDatabase,
 
 }
 
-data class RemoteMuted(val uid: Int, val muted:Boolean)
+data class RemoteMuted(val uid: Int, val muted: Boolean)

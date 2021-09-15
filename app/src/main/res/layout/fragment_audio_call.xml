@@ -35,7 +35,7 @@
                 android:layout_height="match_parent"
                 android:layout_weight="20"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_voice" />
+                android:src="@drawable/ic_action_video_on" />
 
             <ImageView
                 android:id="@+id/ivMute"

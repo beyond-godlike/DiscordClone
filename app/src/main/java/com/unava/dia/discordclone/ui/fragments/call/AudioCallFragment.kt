@@ -8,28 +8,20 @@ import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.google.firebase.database.*
 import com.unava.dia.discordclone.R
-import com.unava.dia.discordclone.data.User
-import com.unava.dia.discordclone.other.Constants
-import com.unava.dia.discordclone.other.Constants.APP_ID
 import com.unava.dia.discordclone.other.Constants.PERMISSION_REQ_ID_CAMERA
 import com.unava.dia.discordclone.other.Constants.PERMISSION_REQ_ID_RECORD_AUDIO
 import com.unava.dia.discordclone.other.Constants.TOKEN
-import com.unava.dia.discordclone.ui.fragments.chat.ChatViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import io.agora.rtc.IRtcEngineEventHandler
 import io.agora.rtc.RtcEngine
 import io.agora.rtc.video.VideoCanvas
 import kotlinx.android.synthetic.main.fragment_audio_call.*
-import kotlinx.coroutines.*
-import javax.inject.Inject
-import javax.inject.Named
 
 @AndroidEntryPoint
 class AudioCallFragment : Fragment() {
@@ -64,14 +56,14 @@ class AudioCallFragment : Fragment() {
     private fun observeViewModel() {
         viewModel.info.observe(requireActivity(), {
             Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
-        } )
+        })
         viewModel.remoteVideo.observe(requireActivity(), {
             setupRemoteVideo(it)
         })
         viewModel.remoteUserLeft.observe(requireActivity(), {
             onRemoteUserLeft()
         })
-        viewModel.remoteVideoMuted.observe(requireActivity(), { remoteMuted->
+        viewModel.remoteVideoMuted.observe(requireActivity(), { remoteMuted ->
             onRemoteUserVideoMuted(remoteMuted)
         })
         viewModel.joined.observe(requireActivity(), {
@@ -84,7 +76,13 @@ class AudioCallFragment : Fragment() {
 
         val localFrame = RtcEngine.CreateRendererView(requireContext())
         localContainer.addView(localFrame)
-        viewModel.mRtcEngine?.setupLocalVideo(VideoCanvas(localFrame, VideoCanvas.RENDER_MODE_FIT, 0))
+        viewModel.mRtcEngine?.setupLocalVideo(
+            VideoCanvas(
+                localFrame,
+                VideoCanvas.RENDER_MODE_FIT,
+                0
+            )
+        )
 
         viewModel.mRtcEngine?.joinChannel(TOKEN, viewModel.channelName, "", 0)
     }
@@ -94,14 +92,47 @@ class AudioCallFragment : Fragment() {
     }
 
     private fun setupUi() {
-        ivOnSwitchCameraClicked.setOnClickListener {
+        ivOnSwitchCameraClicked.setOnClickListener { view ->
+            val iv = view as ImageView
+            if (iv.isSelected) {
+                iv.isSelected = false
+                iv.setImageResource(R.drawable.ic_camera)
+            } else {
+                iv.isSelected = true
+                iv.setImageResource(R.drawable.ic_camera_flip)
+            }
             // BAD
             viewModel.mRtcEngine!!.switchCamera()
         }
-        ivMute.setOnClickListener { iv->
-        }
-        ivOnLocalVideoMute.setOnClickListener { v ->
+        // mute audio
+        ivMute.setOnClickListener { view ->
+            val iv = view as ImageView
+            if (iv.isSelected) {
+                iv.isSelected = false
+                iv.setImageResource(R.drawable.ic_mute)
+            } else {
+                iv.isSelected = true
+                iv.setImageResource(R.drawable.ic_voice)
+            }
 
+            // Stops/Resumes sending the local audio stream.
+            viewModel.mRtcEngine!!.muteLocalAudioStream(iv.isSelected)
+        }
+        ivOnLocalVideoMute.setOnClickListener { view ->
+            val iv = view as ImageView
+            if (iv.isSelected) {
+                iv.isSelected = false
+                iv.setImageResource(R.drawable.ic_action_video_on)
+            } else {
+                iv.isSelected = true
+                iv.setImageResource(R.drawable.ic_action_video_off)
+            }
+            viewModel.mRtcEngine!!.muteLocalVideoStream(iv.isSelected)
+
+            val container = frameRemote as FrameLayout
+            val surfaceView = container.getChildAt(0) as SurfaceView
+            surfaceView.setZOrderMediaOverlay(!iv.isSelected)
+            surfaceView.visibility = if (iv.isSelected) View.GONE else View.VISIBLE
         }
         ivEndCall.setOnClickListener {
             activity?.onBackPressed()
@@ -143,7 +174,13 @@ class AudioCallFragment : Fragment() {
         val remoteFrame = RtcEngine.CreateRendererView(requireContext())
         remoteFrame.setZOrderMediaOverlay(true)
         remoteContainer.addView(remoteFrame)
-        viewModel.mRtcEngine?.setupRemoteVideo(VideoCanvas(remoteFrame, VideoCanvas.RENDER_MODE_FIT, uid))
+        viewModel.mRtcEngine?.setupRemoteVideo(
+            VideoCanvas(
+                remoteFrame,
+                VideoCanvas.RENDER_MODE_FIT,
+                uid
+            )
+        )
     }
 
     override fun onDestroy() {
