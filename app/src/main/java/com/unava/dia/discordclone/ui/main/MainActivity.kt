@@ -10,7 +10,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
-import androidx.lifecycle.Observer
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -18,12 +18,14 @@ import com.google.android.material.navigation.NavigationView
 import com.unava.dia.discordclone.R
 import com.unava.dia.discordclone.data.User
 import com.unava.dia.discordclone.other.Constants.KEY_FIRST_TIME_TOGGLE
+import com.unava.dia.discordclone.other.DrawerLocker
 import com.unava.dia.discordclone.other.addFragment
 import com.unava.dia.discordclone.other.replaceFragment
+import com.unava.dia.discordclone.ui.fragments.SettingsFragment
 import com.unava.dia.discordclone.ui.fragments.call.AudioCallFragment
 import com.unava.dia.discordclone.ui.fragments.chat.ChatFragment
-import com.unava.dia.discordclone.ui.fragments.LoginFragment
-import com.unava.dia.discordclone.ui.fragments.RegisterFragment
+import com.unava.dia.discordclone.ui.fragments.login.LoginFragment
+import com.unava.dia.discordclone.ui.fragments.register.RegisterFragment
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.activity_main.*
 import javax.inject.Inject
@@ -31,7 +33,8 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener,
-    LoginFragment.LoginInteractionListener {
+    LoginFragment.LoginInteractionListener, RegisterFragment.RegisterInteractionListener,
+    DrawerLocker {
 
     @Inject
     lateinit var sharedPref: SharedPreferences
@@ -66,8 +69,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val success = writePersonalDataToSharedPref()
             if (success) addFragment(R.id.fragmentContainer, RegisterFragment())
         } else {
-            // if logged in
-            addFragment(R.id.fragmentContainer, ChatFragment())
+            if (viewModel.isLoggedIn()) {
+                addFragment(R.id.fragmentContainer, ChatFragment())
+            } else {
+                addFragment(R.id.fragmentContainer, LoginFragment())
+            }
         }
 
         viewModel.loadUsers()
@@ -75,7 +81,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun observeViewModel() {
-        this.viewModel.users.observe(this, Observer {
+        this.viewModel.users.observe(this, {
             initAdapter(it)
         })
     }
@@ -88,13 +94,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.miSettings -> {
-                replaceFragment(R.id.fragmentContainer, LoginFragment())
+                replaceFragment(R.id.fragmentContainer, SettingsFragment())
             }
             R.id.miCall -> {
                 replaceFragment(R.id.fragmentContainer, AudioCallFragment())
             }
             R.id.miVideo -> {
             }
+            R.id.miLogout -> viewModel.logOut()
             R.id.miClose -> finish()
         }
 
@@ -112,10 +119,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             .putBoolean(KEY_FIRST_TIME_TOGGLE, false)
             .apply()
         return true
-    }
-
-    override fun onLoginClicked() {
-        replaceFragment(R.id.fragmentContainer, ChatFragment())
     }
 
     private fun initAdapter(users: List<User>) {
@@ -149,5 +152,21 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         } else {
             super.onBackPressed()
         }
+    }
+
+    override fun setDrawerLocked(enabled: Boolean) {
+        if (enabled) {
+            drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+        } else {
+            drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
+        }
+    }
+
+    override fun onLoginClicked() {
+        replaceFragment(R.id.fragmentContainer, ChatFragment())
+    }
+
+    override fun onRegisteredClicked() {
+        replaceFragment(R.id.fragmentContainer, ChatFragment())
     }
 }

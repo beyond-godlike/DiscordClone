@@ -21,6 +21,11 @@
         app:showAsAction="always"
         />
     <item
+        android:id="@+id/miLogout"
+        android:title="Log out"
+        app:showAsAction="never"
+        />
+    <item
         android:id="@+id/miClose"
         android:title="Close"
         app:showAsAction="never"

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    tools:context=".ui.fragments.RegisterFragment">
+    tools:context=".ui.fragments.register.RegisterFragment">
 
     <Button
         android:id="@+id/btSubmit"

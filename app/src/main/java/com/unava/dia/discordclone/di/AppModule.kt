@@ -3,6 +3,7 @@ package com.unava.dia.discordclone.di
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.unava.dia.discordclone.other.Constants.KEY_FIRST_TIME_TOGGLE
 import com.unava.dia.discordclone.other.Constants.SHARED_PREFERENCES_NAME
@@ -22,8 +23,11 @@ object AppModule {
     @Provides
     fun provideTheFirstTimeToggle(sharedPreferences: SharedPreferences) =
         sharedPreferences.getBoolean(
-            KEY_FIRST_TIME_TOGGLE, true
+            KEY_FIRST_TIME_TOGGLE, false
         )
     @Provides
     fun provideFirebaseDatabase() = FirebaseDatabase.getInstance("https://discordclone-dd303-default-rtdb.europe-west1.firebasedatabase.app/")
+
+    @Provides
+    fun provideFirebaseAuth() = FirebaseAuth.getInstance()
 }

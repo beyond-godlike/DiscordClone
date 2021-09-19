@@ -2,6 +2,7 @@ package com.unava.dia.discordclone.ui.main
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -11,7 +12,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(private val firebaseRef: FirebaseDatabase) : ViewModel() {
+class MainViewModel @Inject constructor(
+    private val firebaseRef: FirebaseDatabase,
+    private val auth: FirebaseAuth
+) : ViewModel() {
     val users: MutableLiveData<List<User>> = MutableLiveData()
     val userId: MutableLiveData<Int> = MutableLiveData()
 
@@ -50,6 +54,13 @@ class MainViewModel @Inject constructor(private val firebaseRef: FirebaseDatabas
 
     fun loadChat(id: Int) {
 
+    }
+
+    fun isLoggedIn(): Boolean {
+        return auth.currentUser != null
+    }
+    fun logOut() {
+        auth.signOut()
     }
 
     fun changeCurrentUserId(it: Int) {

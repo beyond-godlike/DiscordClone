@@ -48,6 +48,7 @@ class AudioCallFragment : Fragment() {
             ) && checkSelfPermission(Manifest.permission.CAMERA, PERMISSION_REQ_ID_CAMERA)
         ) {
             viewModel.initializeAndJoinChannel(requireContext())
+            //setupLocalVideo()
         }
 
         observeViewModel()
@@ -181,6 +182,14 @@ class AudioCallFragment : Fragment() {
                 uid
             )
         )
+    }
+
+    private fun setupLocalVideo() {
+        val container = frameRemote as FrameLayout
+        val surfaceView = RtcEngine.CreateRendererView(requireActivity().baseContext)
+        surfaceView.setZOrderMediaOverlay(true)
+        container.addView(surfaceView)
+        viewModel.mRtcEngine!!.setupLocalVideo(VideoCanvas(surfaceView, VideoCanvas.RENDER_MODE_FIT, 0))
     }
 
     override fun onDestroy() {
